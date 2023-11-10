@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebTorrentPlayer Example</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="lib/webtorrent-player.css" rel="stylesheet">
+  <link rel="icon" type="image/png" href="docs/logo.png">
+  <style>
+    :root {
+      font-size: 12px;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #141416;
+      height: 100vh;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <span id=navNowPlaying></span>
+  <section id="player" class="torrent-player">
+    <video id="video" src=""></video>
+    <a href="#player" class="miniplayer"></a>
+    <div class="top">
+      <div data-name="nowPlaying" class="ctrl">
+      </div>
+      <div class='stats'>
+        <span class="ctrl material-icons" data-value="0" data-name="peers">
+          people
+        </span>
+        <span class="ctrl material-icons" data-value="0 B/s" data-name="downSpeed">
+          arrow_downward
+        </span>
+        <span class="ctrl material-icons" data-value="0 B/s" data-name="upSpeed">
+          arrow_upward
+        </span>
+      </div>
+      <a class="material-icons ctrl" title="Save File To Drive" data-name="downloadFile" href="" target="_blank">
+        get_app
+      </a>
+    </div>
+    <div class="middle">
+      <div class="ctrl" data-name="ppToggle"></div>
+      <span class="material-icons ctrl" data-name="playLast">
+        skip_previous
+      </span>
+      <span class="material-icons ctrl" data-name="rewind">
+        fast_rewind
+      </span>
+      <span class="material-icons ctrl" data-name="playPause">
+        play_arrow
+      </span>
+      <span class="material-icons ctrl" data-name="forward">
+        fast_forward
+      </span>
+      <span class="material-icons ctrl" data-name="playNext">
+        skip_next
+      </span>
+      <div data-name="bufferingDisplay">
+      </div>
+    </div>
+    <div class="bottom">
+      <span class="material-icons ctrl" title="Play/Pause [Space]" data-name="playPause">
+        play_arrow
+      </span>
+      <span class="material-icons ctrl" title="Next [N]" data-name="playNext">
+        skip_next
+      </span>
+      <span class="material-icons ctrl" title="Playlist [P]" data-name="openPlaylist">
+        playlist_play
+      </span>
+      <div class="volume">
+        <span class="material-icons ctrl" title="Mute [M]" data-name="toggleMute">
+          volume_up
+        </span>
+        <input class="ctrl" type="range" value="100" id="volume" step="any" data-name="setVolume">
+      </div>
+      <div class="audio-tracks popup">
+        <span class="material-icons ctrl" title="Audio Tracks [T]" disabled data-name="audioButton">
+          queue_music
+        </span>
+        <div class="popup-menu ctrl" data-name="selectAudio">
+        </div>
+      </div>
+      <div class="ctrl" data-name="progressWrapper" data-elapsed="00:00" data-remaining="00:00">
+        <div>
+          <input class="ctrl" type="range" min="0" max="100" value="0" step="any" data-name="setProgress">
+          <img class="ctrl" data-elapsed="00:00" data-name="thumbnail">
+        </div>
+      </div>
+      <div class="subtitles popup">
+        <span class="material-icons ctrl" title="Subtitles [C]" disabled data-name="captionsButton">
+          subtitles
+        </span>
+        <div class="popup-menu ctrl" data-name="selectCaptions">
+        </div>
+      </div>
+      <span class="material-icons ctrl" title="Cast Video [P]" data-name="toggleCast" disabled>
+        cast
+      </span>
+      <span class="material-icons ctrl" title="Popout Window [P]" data-name="togglePopout">
+        picture_in_picture
+      </span>
+      <span class="material-icons ctrl" title="Theatre Mode [T]" data-name="toggleTheatre">
+        crop_16_9
+      </span>
+      <span class="material-icons ctrl" title="Fullscreen [F]" data-name="toggleFullscreen">
+        fullscreen
+      </span>
+    </div>
+  </section>
+  <button type="button" onclick=t(1)>Play Sintel</button>
+  <button type="button" onclick=t(2)>Play Tears Of Steel</button>
+  <button type="button" onclick=d(1)>Download and store Sintel</button>
+  <button type="button" onclick=d(2)>Download and store Tears Of Steel</button>
+  <input type="text" id='magn' placeholder="Magnet/Torrent">
+  <button type="button" onclick=client.playTorrent(magn.value)>Play Magnet/Torrent</button>
+
+  <script src="dist/bundle.js"></script>
+  <script>
+    const playerControls = {}
+    for (const item of document.getElementsByClassName('ctrl')) {
+      if (!playerControls[item.dataset.name]) {
+        playerControls[item.dataset.name] = item
+      } else {
+        playerControls[item.dataset.name] = [playerControls[item.dataset.name], item]
+      }
+    }
+    const client = new WebTorrentPlayer.default({
+      controls: playerControls,
+      video: video,
+      player: player,
+      burnIn: true,
+      seekTime: 2,
+      immerseTime: 10,
+      generateThumbnails: true,
+      visibilityLossPause: true
+    })
+    client.on('prev', params => console.log('User wants to play previous video!', params))
+    client.on('next', params => console.log('User wants to play next video!', params))
+    client.on('playlist', params => console.log('User wants to open playlist!', params))
+    client.on('watched', params => console.log('User watched current video!', params))
+    client.on('download-done', params => console.log('Player finished downloading a file!', params))
+    client.on('video-files', params => console.log('Player found video files!', params))
+    client.on('offline-torrent', params => console.log('Player loaded an offline stored torrent!', params))
+    client.on('no-files', params => console.error('Player couldnt find any playable video files!', params))
+    client.on('no-peers', params => console.error('Player couldnt find any peers!', params))
+
+    function d(a) {
+      switch (a) {
+        case 1:
+          client.offlineDownload('magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2F&xs=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel.torrent')
+          break
+        case 2:
+          client.offlineDownload('magnet:?xt=urn:btih:209c8226b299b308beaf2b9cd3fb49212dbd13ec&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2F&xs=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Ftears-of-steel.torrent')
+          break
+        case 3:
+          client.offlineDownload('magnet:?xt=urn:btih:CE9156EB497762F8B7577B71C0647A4B0C3423E1&tr=wss%3A%2F%2Ftracker.openwebtorrent.com')
+          break
+      }
+    }
+
+    function t(a) {
+      switch (a) {
+        case 1:
+          client.playTorrent('magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2F&xs=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel.torrent')
+          break
+        case 2:
+          client.playTorrent('magnet:?xt=urn:btih:209c8226b299b308beaf2b9cd3fb49212dbd13ec&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2F&xs=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Ftears-of-steel.torrent')
+          break
+        case 3:
+          client.playTorrent('magnet:?xt=urn:btih:CE9156EB497762F8B7577B71C0647A4B0C3423E1&tr=wss%3A%2F%2Ftracker.openwebtorrent.com')
+          break
+      }
+    }
+  </script>
+</body>
+
+</html>
